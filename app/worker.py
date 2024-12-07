@@ -36,6 +36,7 @@ async def main():
     }
     logging.config.dictConfig(LOGGING_CONFIG)
     logger = logging.getLogger()
+    logger.info("Start to initialize the resources.")
 
     mq_resources_manager = await mq.ResourcesManager.initialize(settings)
     sql_resources_manager = await sql.ResourcesManager.initialize(settings)
@@ -49,9 +50,10 @@ async def main():
         logger=logger,
     )
     messages_chunk_size = mq_resources_manager.task_prefetch_count
-
+    logger.info("The resources are initialized.")
     async def bulk_processing():
         nonlocal messages
+        logger.info("Starts to consume messages.")
         while True:
             if not messages:
                 await asyncio.sleep(1)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, IntegrityError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -37,6 +37,10 @@ class ResourcesManager:
                     await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
                     await conn.run_sync(Base.metadata.drop_all)
                     await conn.run_sync(Base.metadata.create_all)
+            except IntegrityError as e:
+                #  "uuid-ossp" already created
+                #  "CREATE EXTENSION IF NOT EXISTS" is not concurrently safe
+                break
             except OperationalError as e:
                 if i == retry_times:
                     raise e

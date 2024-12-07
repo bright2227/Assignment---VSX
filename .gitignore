@@ -49,5 +49,4 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-# python virtual environment
-.venv/**
+.pytest_cache/

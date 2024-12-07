@@ -18,13 +18,13 @@ class ITaskRepository(Protocol):
         self, created_time_lt: datetime | None = None, limit: int = 100, submit: bool | None = None
     ) -> List[Task]: ...
 
-    async def create_task(self, payload: str) -> Task: ...
+    async def create_task(self, task: Task) -> Task: ...
 
     async def update_task(self, task_id: str, update_func: Callable[[Task], None]) -> Task: ...
 
     async def update_tasks(self, task_ids: list[str], update_func: Callable[[list[Task]], None]) -> list[Task]: ...
 
-    async def resubmit_task(self, task: Task) -> None: ...
+    async def submit_task(self, task: Task) -> None: ...
 
 
 class SqlTaskRepository(ITaskRepository):
@@ -62,16 +62,9 @@ class SqlTaskRepository(ITaskRepository):
             result = await session.execute(query)
             return list(result.scalars().all())
 
-    async def create_task(self, payload: str) -> Task:
+    async def create_task(self, task: Task) -> Task:
         async with self.session_factory() as session:
-            task = Task(id=str(uuid4()), payload=payload, status=TaskStatus.pending, submit=False)
             session.add(task)
-            await session.commit()
-            await self.direct_exchange.publish(
-                Message(task.id.encode(), content_type="text/plain"),
-                routing_key=self.task_routing_key,
-            )
-            task.submit = True
             await session.commit()
             await session.refresh(task)
             return task
@@ -94,15 +87,11 @@ class SqlTaskRepository(ITaskRepository):
             await session.commit()
             return tasks
 
-    async def resubmit_task(self, task: Task) -> None:
-        async with self.session_factory() as session:
-            if task.status == TaskStatus.pending:
-                await self.direct_exchange.publish(
-                    Message(task.id.encode(), content_type="text/plain"),
-                    routing_key=self.task_routing_key,
-                )
-            await session.execute(update(Task).values(submit=True).where(Task.id == task.id))
-            await session.commit()
+    async def submit_task(self, task: Task) -> None:
+        await self.direct_exchange.publish(
+            Message(task.id.encode(), content_type="text/plain"),
+            routing_key=self.task_routing_key,
+        )
 
 
 class InMemoryTaskRepository(ITaskRepository):
@@ -126,29 +115,28 @@ class InMemoryTaskRepository(ITaskRepository):
             tasks = tasks[:limit]
         return sorted(tasks, key=lambda task: task.created_time)
 
-    async def create_task(self, payload: str) -> Task:
-        task = Task(
-            id=str(uuid4()),
-            status=TaskStatus.pending,
-            payload=payload,
-            created_time=datetime.now(timezone.utc),
-            updated_time=datetime.now(timezone.utc),
-            submit=False,
-        )
-        self._task_map[task.id] = task
-        task.submit = True
+    async def create_task(self, task: Task) -> Task:
+        task_id = str(uuid4())
+        task.id = task_id
+        self._task_map[task_id] = task
+        task.created_time = datetime.now(timezone.utc)
+        task.updated_time = datetime.now(timezone.utc)
         return task
 
     async def update_task(self, task_id: str, update_func: Callable[[Task], None]) -> Task:
         task = await self.get_task(task_id)
         update_func(task)
+        task.updated_time = datetime.now(timezone.utc)
         return task
 
     async def update_tasks(self, task_ids: list[str], update_func: Callable[[list[Task]], None]) -> list[Task]:
-        tasks = [self._task_map.get(task_id) for task_id in task_ids if task_id in self._task_map]
+        tasks = [self._task_map[task_id] for task_id in task_ids if task_id in self._task_map]
         update_func(tasks)
+        now = datetime.now(timezone.utc)
+        for task in tasks:
+            task.updated_time = now
         return tasks
 
-    async def resubmit_task(self, task: Task) -> None:
-        task.submit = True
+    async def submit_task(self, task: Task) -> None:
+        # TODO: implement a in memory queue
         return

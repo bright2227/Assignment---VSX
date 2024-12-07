@@ -51,6 +51,7 @@ async def main():
     )
     messages_chunk_size = mq_resources_manager.task_prefetch_count
     logger.info("The resources are initialized.")
+
     async def bulk_processing():
         nonlocal messages
         logger.info("Starts to consume messages.")

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError, IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,

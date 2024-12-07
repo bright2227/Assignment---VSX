@@ -21,7 +21,14 @@ class TaskUseCase:
         self.logger = logger
 
     async def create_task(self, payload: str) -> Task:
-        return await self.task_repository.create_task(payload)
+        task = Task(payload=payload, status=TaskStatus.pending, submit=False)
+        task = await self.task_repository.create_task(task)
+        await self.task_repository.submit_task(task)
+        task = await self.task_repository.update_task(task.id, self._submit_task)
+        return task
+
+    def _submit_task(self, task: Task) -> None:
+        task.submit = True
 
     async def get_task(self, task_id: str) -> Task:
         return await self.task_repository.get_task(task_id)
@@ -114,4 +121,5 @@ class TaskUseCase:
 
             last_created_time = tasks[-1].created_time
             for task in tasks:
-                await self.task_repository.resubmit_task(task)
+                await self.task_repository.submit_task(task)
+                await self.task_repository.update_task(task.id, self._submit_task)

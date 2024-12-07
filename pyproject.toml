@@ -5,7 +5,6 @@ description = ""
 authors = ["bright"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "task_process_system"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

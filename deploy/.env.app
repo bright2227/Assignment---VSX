@@ -1,0 +1,2 @@
+POSTGRES_HOST=postgres
+RABBITMQ_HOST=rabbitmq

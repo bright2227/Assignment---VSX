@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    env_file:
+    - .env.postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      # https://github.com/peter-evans/docker-compose-healthcheck/issues/16
+      test: [ "CMD-SHELL", "[ -r /var/run/postgresql/ready ] || ( pg_isready && touch /var/run/postgresql/ready)" ]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    env_file:
+      - .env.rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app_network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  app:
+    container_name: app
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.app
+    ports:
+      - "8000:8000"
+    networks:
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    env_file:
+      - .env.postgres
+      - .env.rabbitmq
+      - .env.app
+
+  worker:
+    container_name: worker
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker
+    networks:
+      - app_network
+    depends_on:
+      - app
+    restart: unless-stopped
+    env_file:
+      - .env.postgres
+      - .env.rabbitmq
+      - .env.app
+
+  worker2:
+    container_name: worker2
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker
+    networks:
+      - app_network
+    depends_on:
+      - app
+    restart: unless-stopped
+    env_file:
+      - .env.postgres
+      - .env.rabbitmq
+      - .env.app
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

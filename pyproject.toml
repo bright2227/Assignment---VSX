@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "task-process-system"
+version = "0.1.0"
+description = ""
+authors = ["bright"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "task_process_system"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.5"
+uvicorn = "^0.32.1"
+pydantic-settings = "^2.6.1"
+sqlalchemy = "^2.0.36"
+asyncpg = "^0.30.0"
+aio-pika = "^9.5.3"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+isort = "^5.13.2"
+pytest = "^8.3.4"
+pyright = "^1.1.389"
+pytest-asyncio = "^0.24.0"
+httpx = "^0.28.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 127
+
+[tool.isort]
+profile = "black"
+src_paths = ["app"]
+virtual_env = "env"
+
+[tool.pyright]
+include = ["app"]
+exclude = [
+    "**/__pycache__",
+]

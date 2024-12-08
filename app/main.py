@@ -16,8 +16,8 @@ from app.domain.exceptions import (
     SqlError,
     TaskNotFoundError,
 )
-from app.repositories.tasks import SqlTaskRepository
-from app.use_cases.tasks import TaskUseCase
+from app.repositories.tasks import TaskCreationRepository
+from app.use_cases.tasks import TaskCreationUseCase
 
 logger = logging.getLogger("uvicorn")
 
@@ -66,9 +66,9 @@ async def lifespan(app: FastAPI):
     async def rerun_non_submit_tasks():
         """Make sure two phase commit if server crash."""
         try:
-            task_use_case = TaskUseCase(
-                task_repository=SqlTaskRepository(
-                    session_factory=app.sql_resources_manager.session_factory,  # type: ignore
+            task_use_case = TaskCreationUseCase(
+                task_repository=TaskCreationRepository(
+                    engine=app.sql_resources_manager.engine,  # type: ignore
                     direct_exchange=app.mq_resources_manager.direct_exchange,  # type: ignore
                     task_routing_key=app.mq_resources_manager.task_routing_key,  # type: ignore
                 ),

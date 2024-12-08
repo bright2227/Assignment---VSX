@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependency import get_tasks_repository
+from app.api.dependency import get_task_creation_repository, get_task_repository
 from app.domain.exceptions import CancelCompletedTask, TaskNotFoundError
 from app.domain.tasks import TaskSchema, TaskStatus
 from app.main import app
@@ -20,7 +20,8 @@ def tasks_repository() -> ITaskRepository:
 @pytest.fixture
 def test_client(tasks_repository: ITaskRepository) -> TestClient:
     client = TestClient(app)
-    app.dependency_overrides[get_tasks_repository] = lambda: tasks_repository
+    app.dependency_overrides[get_task_repository] = lambda: tasks_repository
+    app.dependency_overrides[get_task_creation_repository] = lambda: tasks_repository
     return client
 
 

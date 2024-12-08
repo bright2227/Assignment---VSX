@@ -11,12 +11,12 @@ from app.domain.exceptions import (
     TaskNotFoundError,
 )
 from app.domain.tasks import TaskStatus
-from app.repositories.tasks import InMemoryTaskRepository, ITaskRepository
+from app.repositories.tasks import InMemoryTaskRepository
 from app.use_cases.tasks import TaskUseCase
 
 
 @pytest.fixture
-def tasks_repository() -> ITaskRepository:
+def tasks_repository() -> InMemoryTaskRepository:
     return InMemoryTaskRepository()
 
 

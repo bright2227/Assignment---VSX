@@ -6,8 +6,8 @@ from aio_pika.abc import AbstractIncomingMessage
 from app.config import postgres as sql
 from app.config import rabbitmq as mq
 from app.config.config import Settings
-from app.repositories.tasks import SqlTaskRepository
-from app.use_cases.tasks import TaskUseCase
+from app.repositories.tasks import TaskProcessingRepository
+from app.use_cases.tasks import TaskProcessingUseCase
 
 
 async def main():
@@ -41,12 +41,8 @@ async def main():
     mq_resources_manager = await mq.ResourcesManager.initialize(settings)
     sql_resources_manager = await sql.ResourcesManager.initialize(settings)
     messages: list[AbstractIncomingMessage] = []
-    task_use_case = TaskUseCase(
-        task_repository=SqlTaskRepository(
-            session_factory=sql_resources_manager.session_factory,
-            direct_exchange=mq_resources_manager.direct_exchange,
-            task_routing_key=mq_resources_manager.task_routing_key,
-        ),
+    task_use_case = TaskProcessingUseCase(
+        task_repository=TaskProcessingRepository(engine=sql_resources_manager.engine),
         logger=logger,
     )
     messages_chunk_size = mq_resources_manager.task_prefetch_count

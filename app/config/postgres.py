@@ -52,7 +52,7 @@ class ResourcesManager:
             async_sessionmaker(
                 engine,
                 class_=AsyncSession,
-                autocommit=False,
+                autocommit=False,  # NOTE: autocommit=True is deprecated
                 autoflush=False,
                 expire_on_commit=False,
             ),

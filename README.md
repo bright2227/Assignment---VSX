@@ -73,6 +73,6 @@ pytest tests/
 
 ## TODO
 - [ ] Refactor logging
-- [ ] Reduce io with single query without ORM
+- [x] Reduce io with single query without ORM
 - [ ] Add Benchmark
 - [ ] Implement Opentelemetry

@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
             },
             "uvicorn.access": {
                 "level": "DEBUG",
-                "handlers": [],
+                "handlers": ["default"],
             },
             "uvicorn": {
                 "level": "DEBUG",

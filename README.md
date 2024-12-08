@@ -1,6 +1,10 @@
 # Assignment - High-Throughput Task Processing System
 
-![demo](./doc/static/tasks_consuming.gif)
+- tasks consuming
+![tasks consuming](./doc/static/tasks_consuming.gif)
+
+- tasks canceling
+![tasks canceling](./doc/static/tasks_canceling.gif)
 
 ## Any assumptions or additional design decisions
 1. Each task has `payload` as input, and generate `result` or `error`, which separately stored in columns.

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_DSN: PostgresDsn | None = None
     POSTGRES_DB_POOL_SIZE: int = 10
+    RECREATE_POSTGRES_TABLES: bool = False
 
     @field_validator("POSTGRES_DSN", mode="before")
     @classmethod

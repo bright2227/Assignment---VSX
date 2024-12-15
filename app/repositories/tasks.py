@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange
-from sqlalchemy import Text, cast, column, insert, select, update
+from sqlalchemy import Text, cast, column, insert, inspect, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_session
 from sqlalchemy.sql import Values
 
@@ -80,7 +80,6 @@ class SqlTaskRepository(ITaskRepository):
         async with self.session_factory() as session:
             session.add(task)
             await session.commit()
-            await session.refresh(task)
             return task
 
     async def update_task(self, task_id: str, update_func: Callable[[Task], None]) -> Task:
@@ -91,7 +90,6 @@ class SqlTaskRepository(ITaskRepository):
                 raise TaskNotFoundError(task_id=task_id)
             update_func(task)
             await session.commit()
-            await session.refresh(task)
             return task
 
     async def update_tasks(self, task_ids: list[str], update_func: Callable[[list[Task]], None]) -> list[Task]:

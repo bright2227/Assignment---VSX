@@ -1,10 +1,10 @@
 import asyncio
+import sys
 from asyncio import current_task
 from dataclasses import dataclass
 
 from fastapi import FastAPI
-from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.config.config import Settings
-from app.domain.tasks import Base
 
 
 @dataclass
@@ -29,26 +28,19 @@ class ResourcesManager:
         for i in range(1, retry_times + 1):
             try:
                 engine = create_async_engine(
-                    str(settings.POSTGRES_DSN),
-                    pool_pre_ping=True,
-                    pool_size=settings.POSTGRES_DB_POOL_SIZE,
+                    str(settings.POSTGRES_DSN), pool_pre_ping=True, pool_size=settings.POSTGRES_DB_POOL_SIZE, echo=True
                 )
-                async with engine.begin() as conn:
-                    await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
-                    if settings.RECREATE_POSTGRES_TABLES:
-                        await conn.run_sync(Base.metadata.drop_all)
-                        await conn.run_sync(Base.metadata.create_all)
-            except IntegrityError as e:
-                #  "uuid-ossp" already created
-                #  "CREATE EXTENSION IF NOT EXISTS" is not concurrently safe
-                break
             except OperationalError as e:
                 if i == retry_times:
                     raise e
                 await asyncio.sleep(3)
 
-        assert engine is not None
+        process = await asyncio.create_subprocess_exec("alembic", "upgrade", "head", stderr=sys.stderr, stdout=sys.stdout)
+        await process.communicate()
+        if process.returncode != 0:
+            raise Exception(f"Alembic upgrade fails with code: {process.returncode}")
 
+        assert engine is not None
         session_factory = async_scoped_session(
             async_sessionmaker(
                 engine,
